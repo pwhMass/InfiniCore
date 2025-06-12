@@ -75,6 +75,11 @@ _TEST_CASES = [
         (4, 1)       # y_stride
     ),
     (
+        (2, 2, 2,4),  # shape
+        (16, 8,4, 1), # x_stride
+        (16, 8, 1,2)  # y_stride
+    ),
+    (
         (4, 6, 64),  # shape
         (64, 4*64, 1), # x_stride
         (6*64, 64, 1)  # y_stride

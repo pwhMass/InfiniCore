@@ -66,23 +66,42 @@ Result<RearrangeMeta> RearrangeMeta::create(
         ptrdiff_t len = b.len;
         if (b.dst * len == f.dst && b.src * len == f.src) {
             f = Dim{b.len * f.len, b.dst, b.src};
-            b = Dim{1, 0, 0};
+            // 移除被合并的维度
+            dims.erase(dims.begin() + i);
             ndim -= 1;
         }
     }
-    dims.resize(ndim);
+
     // 填写序号步长、输入步长和输出步长
     std::vector<ptrdiff_t> meta(2 + ndim * 3);
     meta[0] = unit;
-    meta[1 + ndim] = 1;
+
+    // 计算总元素数量
+    ptrdiff_t total_count = 1;
     for (size_t i = 0; i < ndim; ++i) {
-        meta[1 + i] = dims[i].len;
-        meta[1 + 1 + ndim + i] = dims[i].dst;
-        meta[1 + 1 + ndim * 2 + i] = dims[i].src;
+        total_count *= dims[i].len;
     }
-    for (ptrdiff_t i = ndim; i > 0; --i) {
-        meta[1 + i - 1] *= meta[1 + i];
+    meta[1] = total_count;
+
+    // 设置索引步长，从右到左累积计算
+    if (ndim > 0) {
+        meta[1 + ndim] = 1; // 最后一个维度的索引步长为1
+        for (ptrdiff_t i = ndim - 1; i > 0; --i) {
+            meta[1 + i] = meta[1 + i + 1] * dims[i].len;
+        }
     }
+
+    // 设置目标步长和源步长
+    for (size_t i = 0; i < ndim; ++i) {
+        meta[2 + ndim + i] = dims[i].dst;
+        meta[2 + ndim * 2 + i] = dims[i].src;
+    }
+
+    printf("meta: ");
+    for (size_t i = 0; i < meta.size(); ++i) {
+        printf("%ld ", meta[i]);
+    }
+    printf("\n");
     return Result<RearrangeMeta>(meta);
 }
 
